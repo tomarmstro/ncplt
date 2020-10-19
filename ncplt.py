@@ -16,6 +16,9 @@ import seaborn as sns
 import numpy.ma as ma
 import xarray as xr
 
+#Mooring selection
+mooring = "HIS"
+
 #Set up plots
 fig1, ((ax1, ax2, ax3), (ax4, ax5, ax6)) = plt.subplots(2, 3)
 fig1.suptitle('Jan-June CTD Casts', fontsize=16)
@@ -56,7 +59,7 @@ ax12.set_title("Turbidity")
 # def ncplt(mooring):
 #     for file in glob.glob('GBROOS_CTD_NetCDF/' + mooring + '/*.nc'):
     
-for file in glob.glob('GBROOS_CTD_NetCDF/HIS/*.nc'):
+for file in glob.glob('GBROOS_CTD_NetCDF/' + mooring + '/*.nc'):
     
     ds = xr.open_dataset(file)
     df = ds.to_dataframe()
@@ -77,19 +80,22 @@ for file in glob.glob('GBROOS_CTD_NetCDF/HIS/*.nc'):
     if int((str(time)[23:25])) <= 6:
         ax1.plot(temp, pres)
         ax2.plot(sal, pres)
-        ax3.plot(df['DOX'], df.index)
+        ax3.plot(df['DOX'], pres)
         ax4.plot(df['PAR'], pres)
         ax5.plot(df['CPHL'], pres)
         # ax6.plot(df['TURB'], pres)
         # print("sem1")
     if int((str(time)[23:25])) > 6:
-        ax7.plot(temp, df.index)
+        ax7.plot(temp, pres)
         ax8.plot(sal, pres)
-        ax9.plot(df['DOX'], df.index)
+        ax9.plot(df['DOX'], pres)
+        # ax9.plot(df['DOX'], df.index)
         ax10.plot(df['PAR'], pres)
         ax11.plot(df['CPHL'], pres)
         # ax12.plot(df['TURB'])
         # print("sem2")
+    
+    
     
           
 
