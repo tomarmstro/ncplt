@@ -7,10 +7,10 @@ Created on Thu Oct 22 17:17:24 2020
 
 ##To-do:
     # Add option to colour lines based on month of the year
-    # Legend
     # Fix 'replotting' so original plot is replaced
+    # Solved - Legend
+    # Solved - Solve for the 'continue fix' of missing data
     
-
 import tkinter as tk
 from tkinter import ttk
 import matplotlib
@@ -23,17 +23,15 @@ import glob
 from PIL import ImageTk, Image
 from colour import Color
 
-
 LARGE_FONT = ("Verdana", 12)
 HEIGHT = 500
 WIDTH = 600
 
-#Colour gradient script for month colours
+#Colour gradient script for month colours list
 red = Color("red")
 colors = list(red.range_to(Color("green"),12))
 
 class CTDPlotApp(tk.Tk):
-    
     def __init__(self, *args, **kwargs):
         tk.Tk.__init__(self, *args, **kwargs)
         
@@ -55,15 +53,14 @@ class CTDPlotApp(tk.Tk):
         self.show_frame(StartPage)
         
     def show_frame(self, cont):
-        
         frame = self.frames[cont]
         frame.tkraise()
         
         
 class StartPage(tk.Frame):
-    
     def __init__(self, parent, controller):
         tk.Frame.__init__(self, parent, bg='#80c1ff')
+        
         label = tk.Label(self, text="Start Page", font=LARGE_FONT)
         label.pack(pady=10, padx=10)
         
@@ -73,10 +70,12 @@ class StartPage(tk.Frame):
         button2.pack(pady=10, padx=10)
         button3 = ttk.Button(self, text="Graph Page", command = lambda: controller.show_frame(GraphPage))
         button3.pack(pady=10, padx=10)
-        
+
+#Placeholder page        
 class PageOne(tk.Frame):
     def __init__(self, parent, controller):
         tk.Frame.__init__(self, parent, bg='#80c1ff')
+        
         label = tk.Label(self, text="Page One!!", font=LARGE_FONT)
         label.pack(pady=10, padx=10)
         
@@ -85,10 +84,12 @@ class PageOne(tk.Frame):
         
         button2 = ttk.Button(self, text="Page One", command=lambda: controller.show_frame(PageOne))
         button2.pack()
-        
+
+#Placeholder page         
 class PageTwo(tk.Frame):
     def __init__(self, parent, controller):
         tk.Frame.__init__(self, parent, bg='#80c1ff')
+        
         label = tk.Label(self, text="Page Two!!", font=LARGE_FONT)
         label.pack(pady=10, padx=10)
         
@@ -104,22 +105,21 @@ class PageTwo(tk.Frame):
         # background_image = tk.PhotoImage(file='ocean_background.png')
         # background_label = tk.Label(self, image=background_image)
         # background_label.place(relwidth=1, relheight=1)
-        
+
+#Plotting Page        
 class GraphPage(tk.Frame):
     def __init__(self, parent, controller):
         tk.Frame.__init__(self, parent, bg='#80c1ff')
         
-        
-        
-        label = tk.Label(self, text="Graph Page", font=LARGE_FONT)
-        label.pack(pady=10, padx=10)
-        
-        button1 = ttk.Button(self, text="Back to Home", command=lambda: controller.show_frame(StartPage))
-        button1.pack()
-        
         frame = tk.Frame(self, bg='#80c1ff', bd=5)
         # frame.place(relwidth=1, relheight=0.9, anchor='n')
-        frame.pack()
+        frame.place(relwidth=1, relheight=1)
+        
+        label = tk.Label(frame, text="Graph Page", font=LARGE_FONT)
+        label.pack(pady=10, padx=10)
+        
+        button1 = ttk.Button(frame, text="Back to Home", command=lambda: controller.show_frame(StartPage))
+        button1.pack()
         
         # lower_frame = tk.Frame(self, bg='#80c1ff', bd=10)
         # lower_frame.place(relx=0.5, rely=0.25, relwidth=1, relheight=1, anchor='n')
@@ -128,59 +128,71 @@ class GraphPage(tk.Frame):
         # background_label = tk.Label(frame, image=background_image)
         # background_label.pack()
         
-        
-        
         #Create figures and subplots
-        f = Figure(figsize=(8,5), dpi = 100)
-        f.suptitle('Jan-June CTD Casts', fontsize=16)
+        f = Figure(figsize=(8,6), dpi = 100)
+        # f.tight_layout(f, rect=[0.5, 0, 1, 1], h_pad=0.5)
+        f.suptitle('CTD Profiles', fontsize=16)
         f.subplots_adjust(hspace=0.5, wspace=0.5)
-        temp_plt = f.add_subplot(231)
-        temp_plt.invert_yaxis()
-        temp_plt.set_title("Temperature")
-        f.legend("HHZ 1",loc="upper right")
-        sal_plt = f.add_subplot(232)
-        sal_plt.invert_yaxis()
-        sal_plt.set_title("Salinity")
-        dox_plt = f.add_subplot(233)
-        dox_plt.invert_yaxis()
-        dox_plt.set_title("DOX")
-        par_plt = f.add_subplot(234)
-        par_plt.invert_yaxis()
-        par_plt.set_title("PAR")
-        cphl_plt = f.add_subplot(235)
-        cphl_plt.invert_yaxis()
-        cphl_plt.set_title("Chlorophyll")
-        turb_plt = f.add_subplot(236)
-        turb_plt.invert_yaxis()
-        turb_plt.set_title("Turbidity")
         
-        # turb_plt.set_xlim(-10, 100)
-        # turb_plt.set_ylim(-10, 100)
-        
-        
+        # f.legend("HHZ 1",loc="upper right")
         
         selected = tk.StringVar()
         selected.set("Select")
         
         selected_mooring = ""
         
+        #Create canvas and toolbar - outside function so toolbar is only created on startup, not button press
+        canvas = FigureCanvasTkAgg(f, frame)
+        toolbar = NavigationToolbar2Tk(canvas, frame)
+        toolbar.update()
+        
+        #plotting function, draws canvas and plots data according to selected mooring
         def dropdown_func():
             print("Button clicked!", selected.get())
+            #create subplots
+            temp_plt = f.add_subplot(231)
+            sal_plt = f.add_subplot(232)
+            dox_plt = f.add_subplot(233)
+            par_plt = f.add_subplot(234)
+            cphl_plt = f.add_subplot(235)
+            turb_plt = f.add_subplot(236)
+            
+            #clear any plotted data
+            temp_plt.cla()
+            sal_plt.cla()
+            dox_plt.cla()
+            par_plt.cla()
+            cphl_plt.cla()
+            turb_plt.cla()
+            
+            #invert axis and apply subplot labels
+            temp_plt.invert_yaxis()
+            temp_plt.set_title("Temperature")
+            sal_plt.invert_yaxis()
+            sal_plt.set_title("Salinity")
+            dox_plt.invert_yaxis()
+            dox_plt.set_title("DOX")
+            par_plt.invert_yaxis()
+            par_plt.set_title("PAR")
+            cphl_plt.invert_yaxis()
+            cphl_plt.set_title("Chlorophyll")
+            turb_plt.invert_yaxis()
+            turb_plt.set_title("Turbidity")
             
             selected_mooring = str(selected.get())
             print(selected_mooring)
             for file in glob.glob('GBROOS_CTD_NetCDF/' + selected_mooring + '/*.nc'):
-                print(file)
                 ds = xr.open_dataset(file)
                 df = ds.to_dataframe()
                 # df = df.convert_objects(convert_numeric=True)
                 
+                ######THIS IS AN ISSUE - BREAKS LOOP IF MISSING DATA - NEED A WORKAROUND
                 #Continue loop if missing data
                 if 'PRES_REL' not in df.columns:
                     print(file + " is missing PRES_REL")
                     continue
                 if 'TEMP' not in df.columns:
-                    print(file + " is missing PAR")
+                    print(file + " is missing TEMP")
                     continue
                 if 'PSAL' not in df.columns:
                     print(file + " is missing PSAL")
@@ -198,13 +210,13 @@ class GraphPage(tk.Frame):
                 #     print(file + " is missing TURB")
                 #     continue
                 
-                #First of second half of the year
+                #First or second half of the year
                 # if int((str(time)[23:25])) <= 6:
                 #     sem = "First Half"
                 # if int((str(time)[23:25])) >= 6:
                 #     sem = "Second Half"
                     
-                #Variables
+                #Data Variables
                 time = df['TIME']
                 temp = df['TEMP']
                 pres = df['PRES_REL']
@@ -214,34 +226,21 @@ class GraphPage(tk.Frame):
                 cphl = df['CPHL']
                 # turb = df['TURB']
                 
-                # Create the legend
-                f.legend([temp_plt, sal_plt, dox_plt, par_plt, cphl_plt],     # The line objects
-                #labels=(str(time)[18:28]),   # The labels for each line
-                loc="right",   # Position of legend
-                borderaxespad=1,    # Small spacing around legend box
-                title="Legend Title"  # Title for the legend
-                )
-                # f.label=((str(time)[18:28]))
-                #Plot variables
-                
-                temp_plt.plot(temp,pres)
-                temp_plt.legend(loc="upper right")
-                sal_plt.plot(sal,pres)
-                dox_plt.plot(dox, pres)
-                par_plt.plot(par, pres)
-                cphl_plt.plot(cphl, pres)
-                # turb_plt.plot(turb)
-                
+                #Set FV 0 or 1
+                fv = int(file[73])
+                if fv == 1:
+                    #Plot variables
+                    temp_plt.plot(temp, pres, label=file[46:54])
+                    sal_plt.plot(sal, pres)
+                    dox_plt.plot(dox, pres)
+                    par_plt.plot(par, pres)
+                    cphl_plt.plot(cphl, pres)
+                    f.legend(title="Legend", prop={'size': 7}, loc=1)
+            
             #Add plot to tkinter canvas
-            canvas = FigureCanvasTkAgg(f, frame)
             canvas.draw()
-            canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand = True)
-            
-            toolbar = NavigationToolbar2Tk(canvas, frame)
-            toolbar.update()
-            # canvas._tkcanvas.pack(side=tk.TOP, fill=tk.BOTH, expand = True)
-            
-            
+            canvas.get_tk_widget().place(relwidth=0.8, relheight=0.7, relx=0.1, rely=0.2)  
+                
         mooringList = ('YON', 'HIS', 'HIN', 'MYR', 'LSL', 'PPS')
         dropdown = tk.OptionMenu(frame, selected, *mooringList)#, command=selected)
         # dropdown.place(relwidth=0.1, relheight=0.2)
@@ -249,15 +248,6 @@ class GraphPage(tk.Frame):
         
         plot_button = tk.Button(frame, text="Plot it", command=dropdown_func)
         plot_button.pack()
-        #Loop through files
-                    
-        
-        
-        
-        
-        
-        
-        ##Style the window to look like the easy gui
         
 app = CTDPlotApp()
 app.geometry("1280x720")
