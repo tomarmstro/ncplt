@@ -6,8 +6,11 @@ Created on Thu Oct 22 17:17:24 2020
 """
 
 ##To-do:
+    # Add option to set axis bounds? Either default values or add entries for them?
+    # MatplotlibDeprecationWarning error with resetting axes?
     # Add option to colour lines based on month of the year
     # Fix 'replotting' so original plot is replaced
+    # Solved - What's wrong with all turbidity data? Missing?
     # Solved - Legend
     # Solved - Solve for the 'continue fix' of missing data
     
@@ -24,8 +27,7 @@ from PIL import ImageTk, Image
 from colour import Color
 
 LARGE_FONT = ("Verdana", 12)
-HEIGHT = 500
-WIDTH = 600
+file_path = 'GBROOS_CTD_NetCDF/'
 
 #Colour gradient script for month colours list
 red = Color("red")
@@ -49,13 +51,11 @@ class CTDPlotApp(tk.Tk):
             self.frames[F] = frame
             frame.grid(row=0, column=0, sticky="nsew")
         
-        
         self.show_frame(StartPage)
         
     def show_frame(self, cont):
         frame = self.frames[cont]
         frame.tkraise()
-        
         
 class StartPage(tk.Frame):
     def __init__(self, parent, controller):
@@ -134,8 +134,6 @@ class GraphPage(tk.Frame):
         f.suptitle('CTD Profiles', fontsize=16)
         f.subplots_adjust(hspace=0.5, wspace=0.5)
         
-        # f.legend("HHZ 1",loc="upper right")
-        
         selected = tk.StringVar()
         selected.set("Select")
         
@@ -157,31 +155,37 @@ class GraphPage(tk.Frame):
             cphl_plt = f.add_subplot(235)
             turb_plt = f.add_subplot(236)
             
+            variables_plt = [temp_plt, sal_plt, dox_plt, par_plt, cphl_plt, turb_plt]
+            
             #clear any plotted data
-            temp_plt.cla()
-            sal_plt.cla()
-            dox_plt.cla()
-            par_plt.cla()
-            cphl_plt.cla()
-            turb_plt.cla()
+            for var in variables_plt:
+                var.cla()
+            # temp_plt.cla()
+            # sal_plt.cla()
+            # dox_plt.cla()
+            # par_plt.cla()
+            # cphl_plt.cla()
+            # turb_plt.cla()
             
             #invert axis and apply subplot labels
-            temp_plt.invert_yaxis()
+                var.invert_yaxis()
+            # temp_plt.invert_yaxis()
+            # sal_plt.invert_yaxis()
+            # dox_plt.invert_yaxis()
+            # par_plt.invert_yaxis()
+            # cphl_plt.invert_yaxis()
+            # turb_plt.invert_yaxis()
+            
             temp_plt.set_title("Temperature")
-            sal_plt.invert_yaxis()
             sal_plt.set_title("Salinity")
-            dox_plt.invert_yaxis()
             dox_plt.set_title("DOX")
-            par_plt.invert_yaxis()
             par_plt.set_title("PAR")
-            cphl_plt.invert_yaxis()
             cphl_plt.set_title("Chlorophyll")
-            turb_plt.invert_yaxis()
             turb_plt.set_title("Turbidity")
             
             selected_mooring = str(selected.get())
             print(selected_mooring)
-            for file in glob.glob('GBROOS_CTD_NetCDF/' + selected_mooring + '/*.nc'):
+            for file in glob.glob(file_path + selected_mooring + '/*.nc'):
                 ds = xr.open_dataset(file)
                 df = ds.to_dataframe()
                 # df = df.convert_objects(convert_numeric=True)
@@ -227,7 +231,8 @@ class GraphPage(tk.Frame):
                 # turb = df['TURB']
                 
                 #Set FV 0 or 1
-                fv = int(file[73])
+                # fv = int(file[73])
+                fv = int(file[file.index('FV') + 3])
                 if fv == 1:
                     #Plot variables
                     temp_plt.plot(temp, pres, label=file[46:54])
