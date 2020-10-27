@@ -9,10 +9,10 @@ Created on Thu Oct 22 17:17:24 2020
     # Add option to set axis bounds? Either default values or add entries for them?
     # MatplotlibDeprecationWarning error with resetting axes?
     # Add option to colour lines based on month of the year
-    # Fix 'replotting' so original plot is replaced
+    # Solve for the 'continue fix' of missing data
+    # Solved - Fix 'replotting' so original plot is replaced
     # Solved - What's wrong with all turbidity data? Missing?
     # Solved - Legend
-    # Solved - Solve for the 'continue fix' of missing data
     
 import tkinter as tk
 from tkinter import ttk
@@ -101,10 +101,6 @@ class PageTwo(tk.Frame):
         
         lower_frame = tk.Frame(self, bg='#80c1ff', bd=10)
         lower_frame.place(relx=0.5, rely=0.25, relwidth=0.75, relheight=0.6, anchor='n')
-        
-        # background_image = tk.PhotoImage(file='ocean_background.png')
-        # background_label = tk.Label(self, image=background_image)
-        # background_label.place(relwidth=1, relheight=1)
 
 #Plotting Page        
 class GraphPage(tk.Frame):
@@ -115,18 +111,18 @@ class GraphPage(tk.Frame):
         # frame.place(relwidth=1, relheight=0.9, anchor='n')
         frame.place(relwidth=1, relheight=1)
         
-        label = tk.Label(frame, text="Graph Page", font=LARGE_FONT)
-        label.pack(pady=10, padx=10)
-        
-        button1 = ttk.Button(frame, text="Back to Home", command=lambda: controller.show_frame(StartPage))
-        button1.pack()
+        background_label = tk.Label(frame)
+        background_label.pack()
         
         # lower_frame = tk.Frame(self, bg='#80c1ff', bd=10)
         # lower_frame.place(relx=0.5, rely=0.25, relwidth=1, relheight=1, anchor='n')
         
-        # background_image = tk.PhotoImage(file='ocean_background.png')
-        # background_label = tk.Label(frame, image=background_image)
-        # background_label.pack()
+        #Background picture - if causing errors just comment out or reload kernel to fix
+        image1 = Image.open("ocean_background.png")
+        image2 =  ImageTk.PhotoImage(image1)
+        image_label = ttk.Label(frame, image=image2)
+        background_label.image = image2
+        image_label.place(relheight=1, relwidth=1)
         
         #Create figures and subplots
         f = Figure(figsize=(8,6), dpi = 100)
@@ -136,8 +132,6 @@ class GraphPage(tk.Frame):
         
         selected = tk.StringVar()
         selected.set("Select")
-        
-        selected_mooring = ""
         
         #Create canvas and toolbar - outside function so toolbar is only created on startup, not button press
         canvas = FigureCanvasTkAgg(f, frame)
@@ -245,14 +239,18 @@ class GraphPage(tk.Frame):
             #Add plot to tkinter canvas
             canvas.draw()
             canvas.get_tk_widget().place(relwidth=0.8, relheight=0.7, relx=0.1, rely=0.2)  
-                
+        
+        #add buttons, labels and dropdown menu/button
+        button1 = ttk.Button(frame, text="Back to Home", command=lambda: controller.show_frame(StartPage))
+        button1.place(relwidth=0.08, relheight=0.03, relx=0.46, rely=0.06)
+        label = tk.Label(frame, text="Graph Page", font=LARGE_FONT)
+        label.place(relwidth=0.12, relheight=0.03, relx=0.44, rely=0.02)
         mooringList = ('YON', 'HIS', 'HIN', 'MYR', 'LSL', 'PPS')
         dropdown = tk.OptionMenu(frame, selected, *mooringList)#, command=selected)
         # dropdown.place(relwidth=0.1, relheight=0.2)
-        dropdown.pack()
-        
+        dropdown.place(relwidth=0.2, relheight=0.075, relx=0.35, rely=0.1)
         plot_button = tk.Button(frame, text="Plot it", command=dropdown_func)
-        plot_button.pack()
+        plot_button.place(relwidth=0.05, relheight=0.075, relx=0.56, rely=0.1)
         
 app = CTDPlotApp()
 app.geometry("1280x720")
