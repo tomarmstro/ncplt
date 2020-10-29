@@ -30,8 +30,21 @@ LARGE_FONT = ("Verdana", 12)
 file_path = 'GBROOS_CTD_NetCDF/'
 
 #Colour gradient script for month colours list
-red = Color("red")
-colors = list(red.range_to(Color("green"),12))
+first_color = Color("blue")
+second_color = Color("red")
+#This color gradient works, but not with a smaller list - rgb hex's might get too specific for matplotlib?
+colors_enabled = 1  #Y/N
+
+         
+
+colors = list(first_color.range_to(second_color,8))
+
+
+
+#6 is red
+#colors[6] is red
+#label=file[46:54]
+
 
 class CTDPlotApp(tk.Tk):
     def __init__(self, *args, **kwargs):
@@ -108,7 +121,6 @@ class GraphPage(tk.Frame):
         tk.Frame.__init__(self, parent, bg='#80c1ff')
         
         frame = tk.Frame(self, bg='#80c1ff', bd=5)
-        # frame.place(relwidth=1, relheight=0.9, anchor='n')
         frame.place(relwidth=1, relheight=1)
         
         background_label = tk.Label(frame)
@@ -117,7 +129,7 @@ class GraphPage(tk.Frame):
         # lower_frame = tk.Frame(self, bg='#80c1ff', bd=10)
         # lower_frame.place(relx=0.5, rely=0.25, relwidth=1, relheight=1, anchor='n')
         
-        #Background picture - if causing errors just comment out or reload kernel to fix
+        #Background picture - if causing image errors just comment out or reload kernel to fix
         image1 = Image.open("ocean_background.png")
         image2 =  ImageTk.PhotoImage(image1)
         image_label = ttk.Label(frame, image=image2)
@@ -126,13 +138,14 @@ class GraphPage(tk.Frame):
         
         #Create figures and subplots
         f = Figure(figsize=(8,6), dpi = 100)
-        # f.tight_layout(f, rect=[0.5, 0, 1, 1], h_pad=0.5)
         f.suptitle('CTD Profiles', fontsize=16)
         f.subplots_adjust(hspace=0.5, wspace=0.5)
         
+        #variables for dropdown and checkbox
         selected = tk.StringVar()
         selected.set("Select")
-        
+        check_var = tk.IntVar()
+                
         #Create canvas and toolbar - outside function so toolbar is only created on startup, not button press
         canvas = FigureCanvasTkAgg(f, frame)
         toolbar = NavigationToolbar2Tk(canvas, frame)
@@ -182,6 +195,7 @@ class GraphPage(tk.Frame):
             for file in glob.glob(file_path + selected_mooring + '/*.nc'):
                 ds = xr.open_dataset(file)
                 df = ds.to_dataframe()
+                print(colors_enabled)
                 # df = df.convert_objects(convert_numeric=True)
                 
                 ######THIS IS AN ISSUE - BREAKS LOOP IF MISSING DATA - NEED A WORKAROUND
@@ -226,15 +240,30 @@ class GraphPage(tk.Frame):
                 
                 #Set FV 0 or 1
                 # fv = int(file[73])
+                profile_date = file[46:54]
+                profile_month = file[50:52]
+                #Selects a color based on month - June coldest, Dec hottest with gradient inbetween
+                monthly_colors = "%s" % colors[abs(6-int(profile_month))]
+    
+                #Check FV Value
                 fv = int(file[file.index('FV') + 3])
                 if fv == 1:
-                    #Plot variables
-                    temp_plt.plot(temp, pres, label=file[46:54])
-                    sal_plt.plot(sal, pres)
-                    dox_plt.plot(dox, pres)
-                    par_plt.plot(par, pres)
-                    cphl_plt.plot(cphl, pres)
-                    f.legend(title="Legend", prop={'size': 7}, loc=1)
+                    #Check for colour selection - Monthly or random?
+                    #unhappy with writing this twice for two color variants. Couldn't find phrase for default colors.
+                    if check_var.get() == 1:
+                        temp_plt.plot(temp, pres, label=profile_date, color=monthly_colors)
+                        sal_plt.plot(sal, pres, color=monthly_colors)
+                        dox_plt.plot(dox, pres, color=monthly_colors)
+                        par_plt.plot(par, pres, color=monthly_colors)
+                        cphl_plt.plot(cphl, pres, color=monthly_colors)
+                        f.legend(title="Legend", prop={'size': 7}, loc=1)
+                    elif check_var.get() == 0:
+                        temp_plt.plot(temp, pres, label=profile_date)
+                        sal_plt.plot(sal, pres)
+                        dox_plt.plot(dox, pres)
+                        par_plt.plot(par, pres)
+                        cphl_plt.plot(cphl, pres)
+                        f.legend(title="Legend", prop={'size': 7}, loc=1)
             
             #Add plot to tkinter canvas
             canvas.draw()
@@ -246,9 +275,10 @@ class GraphPage(tk.Frame):
         label = tk.Label(frame, text="Graph Page", font=LARGE_FONT)
         label.place(relwidth=0.12, relheight=0.03, relx=0.44, rely=0.02)
         mooringList = ('YON', 'HIS', 'HIN', 'MYR', 'LSL', 'PPS')
-        dropdown = tk.OptionMenu(frame, selected, *mooringList)#, command=selected)
-        # dropdown.place(relwidth=0.1, relheight=0.2)
+        dropdown = tk.OptionMenu(frame, selected, *mooringList)
         dropdown.place(relwidth=0.2, relheight=0.075, relx=0.35, rely=0.1)
+        checkbox = tk.Checkbutton(frame, text='Monthly Colors', variable=check_var)
+        checkbox.place(relwidth=0.15, relheight=0.04, relx=0.7, rely=0.1)
         plot_button = tk.Button(frame, text="Plot it", command=dropdown_func)
         plot_button.place(relwidth=0.05, relheight=0.075, relx=0.56, rely=0.1)
         
